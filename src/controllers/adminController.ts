@@ -35,13 +35,14 @@ export const updateCourse = async (req: Request, res: Response, next: NextFuncti
   }
 };
 
-export const deleteCourse = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const course = await Course.findByIdAndDelete(req.params.id);
-    if (!course) return next(new ErrorResponse("Course not found", 404));
-    res.json({ success: true, message: "Course deleted" });
-  } catch (error) {
-    next(new ErrorResponse("Failed to delete course", 500));
+export const deleteCourse = async (req: Request, res: Response,next: NextFunction) => {
+  try{
+    const { id } = req.params;
+    await Videos.deleteMany({ _id: { $in: (await Course.findById(id))?.videos || [] } });
+    await Course.findByIdAndDelete(id);
+    res.json({ message: "Course and related videos deleted" });
+  }catch(error){
+    next(new ErrorResponse("Failed to Delete video", 500));
   }
 };
 
