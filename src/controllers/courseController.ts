@@ -19,7 +19,7 @@ export const GetCourse = async (req:Request, res:Response) =>{
   const {id} = req.params
   if(!id) return res.status(400).json({message:"Course is not available"})
   try{
-    const course = await Course.findById(id).populate("videos");
+    const course = await Course.findById(id).populate('videos','title url duration');
     res.status(201).json(course)
   }catch(error){
     res.json({message:"Error finidng Course "})

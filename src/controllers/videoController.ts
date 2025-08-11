@@ -4,9 +4,9 @@ import Course from "../models/Course";
 
 // Create 
 export const createVideo = async (req: Request, res: Response) => {
-  const { title, url, courseId } = req.body;
+  const { title, url, courseId,duration } = req.body;
   try {
-    const video = await Videos.create({ title, url });
+    const video = await Videos.create({ title, url,duration });
     await Course.findByIdAndUpdate(courseId, { $push: { videos: video._id } });
     res.status(201).json(video);
   } catch (err) {
