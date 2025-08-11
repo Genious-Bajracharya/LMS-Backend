@@ -31,31 +31,40 @@ export const updateProgress = async (req: Request, res: Response, next: NextFunc
     if (typeof watchedDuration !== "number" || watchedDuration < 0) {
       return next(new ErrorResponse("Invalid watchedDuration value", 400));
     }
-    const user = (req as any).user;
 
+    const user = (req as any).user;
     if (!user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const userId = user._id; // Assuming req.user is set via auth middleware
+    const userId = user._id;
 
     let progress = await Progress.findOne({ user: userId, course: courseId, video: videoId });
 
+    const roundedWatched = Math.floor(watchedDuration);
+    const roundedDuration = Math.floor(videoDuration);
+
     if (!progress) {
+      // Create new progress record
       progress = new Progress({
         user: userId,
         course: courseId,
         video: videoId,
-        watchedDuration,
-        videoDuration,
-        completed: watchedDuration >= videoDuration - 5,
+        watchedDuration: roundedWatched,
+        videoDuration: roundedDuration,
+        completed: roundedWatched >= roundedDuration - 5,
       });
     } else {
-      // Only update if user watched further
-      if (watchedDuration > progress.watchedDuration) {
-        progress.watchedDuration = watchedDuration;
-        progress.completed = watchedDuration >= videoDuration - 5;
+      // Update only if new watched time is greater
+      if (roundedWatched > progress.watchedDuration) {
+        progress.watchedDuration = roundedWatched;
       }
+      // Always ensure videoDuration is correct
+      if (roundedDuration !== progress.videoDuration) {
+        progress.videoDuration = roundedDuration;
+      }
+      // Recalculate completion status
+      progress.completed = progress.watchedDuration >= progress.videoDuration - 5;
     }
 
     await progress.save();
