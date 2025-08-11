@@ -20,52 +20,74 @@ const isCompleted = (
   return false;
 };
 
-export const updateProgress = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const updateProgress = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { courseId, videoId, watchedDuration, videoDuration } = req.body;
 
-    if (!courseId || !videoId || !videoDuration) {
+    // Basic validations
+    if (!courseId || !videoId || !videoDuration || watchedDuration === undefined) {
       return next(new ErrorResponse("Missing required fields", 400));
     }
+    if (typeof watchedDuration !== "number" || watchedDuration < 0) {
+      return next(new ErrorResponse("Invalid watchedDuration value", 400));
+    }
+    const user = (req as any).user;
 
-    let progress = await Progress.findOne({
-      user: req.user._id,
-      course: courseId,
-      video: videoId
-    });
+    if (!user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const userId = user._id; // Assuming req.user is set via auth middleware
+
+    let progress = await Progress.findOne({ user: userId, course: courseId, video: videoId });
 
     if (!progress) {
       progress = new Progress({
-        user: req.user._id,
+        user: userId,
         course: courseId,
         video: videoId,
         watchedDuration,
         videoDuration,
-        completed: watchedDuration >= videoDuration - 5 // allow small margin
+        completed: watchedDuration >= videoDuration - 5,
       });
     } else {
-      progress.watchedDuration = watchedDuration;
-      progress.completed = watchedDuration >= videoDuration - 5;
+      // Only update if user watched further
+      if (watchedDuration > progress.watchedDuration) {
+        progress.watchedDuration = watchedDuration;
+        progress.completed = watchedDuration >= videoDuration - 5;
+      }
     }
 
     await progress.save();
-    res.json({ success: true, progress });
+
+    return res.status(200).json({ success: true, progress });
   } catch (error) {
-    next(new ErrorResponse("Failed to update progress", 500));
+    console.error(error);
+    return next(new ErrorResponse("Failed to update progress", 500));
   }
 };
 
-export const getUserProgress = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const getUserProgress = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { courseId } = req.params;
-    const progress = await Progress.find({
-      user: req.user._id,
-      course: courseId
-    }).populate("video", "title duration");
+    const user = (req as any).user;
 
-    res.json({ success: true, progress });
+    if (!user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const userId = user._id;
+    if (!courseId) {
+      return next(new ErrorResponse("Course ID is required", 400));
+    }
+
+    const progress = await Progress.find({ user: userId, course: courseId })
+      .populate("video", "title duration");
+
+    return res.status(200).json({ success: true, progress });
   } catch (error) {
-    next(new ErrorResponse("Failed to fetch progress", 500));
+    console.error(error);
+    return next(new ErrorResponse("Failed to fetch progress", 500));
   }
 };
 

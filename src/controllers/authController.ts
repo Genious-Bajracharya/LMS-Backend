@@ -18,8 +18,8 @@ export const registerUser = async (req: Request, res: Response) => {
     res.status(201).json({ _id: user.id, name: user.name, email: user.email, token: generateToken(user.id) });
     };
 
-    export const loginUser = async (req: Request, res: Response) => {
-        
+export const loginUser = async (req: Request, res: Response) => {
+    
     const { email, password } = req.body;
     const user = await User.findOne({ email });
 
@@ -28,5 +28,5 @@ export const registerUser = async (req: Request, res: Response) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
-    res.json({ _id: user.id, name: user.name, email: user.email, token: generateToken(user.id) });
+    res.json({ _id: user.id, role:user.role, name: user.name, email: user.email, token: generateToken(user.id) });
 };

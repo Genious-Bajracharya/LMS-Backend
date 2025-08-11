@@ -8,13 +8,15 @@ import {
   deleteCourse,
   updateVideo,
   deleteVideo,
-  createAdmin
+  createAdmin,
+  getUser
 } from "../controllers/adminController";
 
 const router = express.Router();
 
 // USER MANAGEMENT
 router.get("/users", protect, isAdmin, getAllUsers);
+router.get("/users/:id", protect, isAdmin, getUser);
 router.delete("/users/:id", protect, isAdmin, deleteUser);
 
 // COURSE MANAGEMENT

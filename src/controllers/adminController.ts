@@ -14,6 +14,19 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
   }
 };
 
+export const getUser = async (req: Request, res: Response, next: NextFunction) => {
+  const { id } = req.params; 
+  try {
+    const user = await User.findById(id);
+    if (!user) {
+      return next(new ErrorResponse("User not found", 404));
+    }
+    res.json({ user });
+  } catch (error) {
+    next(new ErrorResponse("Failed to fetch user", 500));
+  }
+};
+
 export const deleteUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = await User.findByIdAndDelete(req.params.id);
@@ -93,3 +106,59 @@ export const createAdmin = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Server error", error });
   }
 };
+
+
+
+export const listUsers = async (_req: Request, res: Response) => {
+  try {
+    const users = await User.find()
+      .select('_id name email role createdAt')
+      .sort({ createdAt: -1 });
+    
+    return res.json( { users });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({message: 'Failed to fetch users'});
+  }
+};
+
+export const updateUserRole = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
+    
+    const user = await User.findByIdAndUpdate(
+      id, 
+      { role }, 
+      { new: true }
+    ).select('_id name email role');
+    
+    if (!user) {
+      return res.status(404).json({message: 'User not found'});
+    }
+    
+    return res.json( { user });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({message: 'Failed to update user role'});
+  }
+};
+
+// export const deleteUser = async (req: Request, res: Response) => {
+//   try {
+//     const { id } = req.params;
+    
+//     const user = await User.findByIdAndDelete(id);
+//     if (!user) {
+//       return res.status(404).json({message: 'User not found'});
+//     }
+    
+//     // Clean up user's progress
+//     await Progress.deleteMany({ user: id });
+    
+//     return res.json( { message: 'User deleted successfully' });
+//   } catch (error) {
+//     console.error(error);
+//     return res.json({message: 'Failed to delete user'});
+//   }
+// };

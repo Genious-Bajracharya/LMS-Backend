@@ -4,6 +4,7 @@ export interface IVideo extends Document {
     title: string;
     url: string;
     progress: number;
+    duration:number;
 }
 
 const videoSchema = new Schema<IVideo>(
@@ -22,6 +23,7 @@ const videoSchema = new Schema<IVideo>(
             type: Number,
             default: 0 
             },
+        duration: { type: Number, required: true },
     },
     { timestamps: true }
 );
